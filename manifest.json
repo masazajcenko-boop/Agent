@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "Chrome Crawler — Agent Edition",
+  "version": "0.7.6",
+  "author": "ir00nman",
+  "homepage_url": "https://github.com/masazajcenko-boop/Agent",
+  "description": "Chrome Crawler — браузерный LLM-агент с отдельным плавающим окном.",
+  "permissions": [
+    "sidePanel",
+    "scripting",
+    "tabs",
+    "storage",
+    "activeTab",
+    "declarativeNetRequest",
+    "debugger"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "side_panel": {
+    "default_path": "panel/sidepanel.html"
+  },
+  "action": {
+    "default_title": "Chrome crawler"
+  },
+  "commands": {
+    "open-agent-window": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y",
+        "mac": "Command+Shift+Y"
+      },
+      "description": "Открыть Chrome Crawler в отдельном окне"
+    }
+  }
+}
