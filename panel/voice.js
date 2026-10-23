@@ -1,10 +1,9 @@
 'use strict';
 
-// Голосовой режим Авроры на Web Speech API.
-// В режиме ожидания распознаётся только фраза вызова; после вызова вопрос
-// можно произносить без ограничения длительности. 10 секунд тишины завершают
-// текущий ввод: если был распознан вопрос, он отправляется агенту, затем
-// распознавание возвращается к ожиданию слова «Аврора».
+// Голосовой режим Авроры.
+// «Аврора» начинает диктовку. Текст появляется в поле задачи, но не отправляется
+// автоматически. «Отправить» / «Отправь» отправляет подготовленный текст.
+// 10 секунд тишины возвращают режим к ожиданию имени, сохраняя черновик.
 
 (() => {
   const toggle = document.getElementById('voiceToggle');
@@ -16,10 +15,11 @@
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   let recognition = null;
   let enabled = false;
-  let mode = 'wake'; // wake | command
+  let mode = 'wake';
   let restartTimer = null;
   let silenceTimer = null;
-  let pendingText = '';
+  let voiceDraft = '';
+  let baseText = '';
   let starting = false;
 
   const setStatus = (message) => {
@@ -29,7 +29,7 @@
 
   const normalize = (value) => String(value || '')
     .toLocaleLowerCase('ru-RU')
-    .replace(/[.,!?;:()[\]{}«»"'`]/g, ' ')
+    .replace(/[.,!?;:()[\]{}«»"']/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 
@@ -47,40 +47,58 @@
     }
   }
 
-  function startWakeMode() {
-    clearSilenceTimer();
-    pendingText = '';
-    mode = 'wake';
-    if (enabled) setStatus('Аврора ждёт имя «Аврора»…');
+  function combineDraft() {
+    return [baseText.trim(), voiceDraft.trim()].filter(Boolean).join(' ').trim();
   }
 
-  function finishCommand() {
+  function showDraft() {
+    task.value = combineDraft();
+    task.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  function returnToWakeMode() {
     clearSilenceTimer();
-    const question = pendingText.trim();
-    pendingText = '';
+    showDraft();
+    voiceDraft = '';
+    baseText = task.value.trim();
+    mode = 'wake';
+    if (enabled) setStatus(baseText
+      ? 'Черновик сохранён. Аврора ждёт имя «Аврора»…'
+      : 'Аврора ждёт имя «Аврора»…');
+  }
+
+  function sendDraft() {
+    clearSilenceTimer();
+    showDraft();
+    const message = task.value.trim();
+    voiceDraft = '';
+    baseText = '';
     mode = 'wake';
 
-    if (question) {
-      // Вставляем распознанную речь в обычное поле задачи и запускаем
-      // существующий обработчик Agent, не обходя его логику.
-      task.value = question;
-      task.dispatchEvent(new Event('input', { bubbles: true }));
-      setStatus('Вопрос распознан. Передаю его агенту…');
+    if (message) {
+      setStatus('Отправляю сообщение…');
       run.click();
-      if (enabled) setStatus('Аврора ждёт имя «Аврора»…');
+      if (enabled) setStatus('Сообщение отправлено. Аврора ждёт имя «Аврора»…');
     } else if (enabled) {
-      setStatus('Тишина 10 секунд. Аврора снова ждёт имя…');
+      setStatus('Сообщение пустое. Аврора ждёт имя «Аврора»…');
     }
   }
 
   function armSilenceTimer() {
     clearSilenceTimer();
-    silenceTimer = setTimeout(finishCommand, 10000);
+    silenceTimer = setTimeout(returnToWakeMode, 10000);
   }
 
   function removeWakeWord(text) {
-    // Убираем имя вызова только один раз в начале фразы.
     return String(text || '').replace(/^\s*аврора[\s,.:;!?—-]*/i, '').trim();
+  }
+
+  function isSendCommand(text) {
+    return /(?:^|\s)(?:отправить|отправь|отправляй)$/i.test(normalize(text));
+  }
+
+  function removeSendCommand(text) {
+    return String(text || '').replace(/(?:^|\s)(?:отправить|отправь|отправляй)[.!?,;:]*\s*$/i, '').trim();
   }
 
   function handleFinalTranscript(rawText) {
@@ -91,17 +109,33 @@
     if (mode === 'wake') {
       if (!/\bаврора\b/i.test(normalize(transcript))) return;
       mode = 'command';
-      pendingText = removeWakeWord(transcript);
-      setStatus('Слушаю вопрос… можно говорить сколько угодно.');
+      baseText = task.value.trim();
+      voiceDraft = '';
+      const afterWakeWord = removeWakeWord(transcript);
+      if (afterWakeWord) {
+        if (isSendCommand(afterWakeWord)) {
+          sendDraft();
+          return;
+        }
+        voiceDraft = afterWakeWord;
+      }
+      showDraft();
+      setStatus('Диктую в черновик. Скажи «отправить», когда будешь готов.');
       armSilenceTimer();
       return;
     }
 
-    // Если имя повторилось во время диалога, это не должно попадать
-    // в текст запроса.
     const cleaned = removeWakeWord(transcript);
-    if (cleaned) pendingText = [pendingText, cleaned].filter(Boolean).join(' ').trim();
-    setStatus(pendingText ? 'Слушаю… завершение после 10 секунд тишины.' : 'Слушаю вопрос…');
+    if (isSendCommand(cleaned)) {
+      const textWithoutCommand = removeSendCommand(cleaned);
+      if (textWithoutCommand) voiceDraft = [voiceDraft, textWithoutCommand].filter(Boolean).join(' ').trim();
+      sendDraft();
+      return;
+    }
+
+    if (cleaned) voiceDraft = [voiceDraft, cleaned].filter(Boolean).join(' ').trim();
+    showDraft();
+    setStatus('Черновик обновлён. Скажи «отправить» или сделай паузу.');
     armSilenceTimer();
   }
 
@@ -114,7 +148,6 @@
         starting = true;
         recognition.start();
       } catch (error) {
-        // Chrome может ещё завершать предыдущую сессию распознавания.
         if (error && error.name !== 'InvalidStateError') {
           console.warn('Aurora voice: не удалось перезапустить распознавание.', error);
         }
@@ -137,9 +170,7 @@
     recognition.onresult = (event) => {
       for (let i = event.resultIndex; i < event.results.length; i += 1) {
         const result = event.results[i];
-        if (result && result.isFinal && result[0]) {
-          handleFinalTranscript(result[0].transcript);
-        }
+        if (result && result.isFinal && result[0]) handleFinalTranscript(result[0].transcript);
       }
     };
 
@@ -156,9 +187,7 @@
         status.hidden = false;
         return;
       }
-      if (event.error === 'audio-capture') {
-        setStatus('Микрофон не найден или занят другим приложением.');
-      }
+      if (event.error === 'audio-capture') setStatus('Микрофон не найден или занят другим приложением.');
     };
 
     recognition.onend = () => {
@@ -176,7 +205,8 @@
 
     enabled = true;
     mode = 'wake';
-    pendingText = '';
+    voiceDraft = '';
+    baseText = task.value.trim();
     toggle.setAttribute('aria-pressed', 'true');
     toggle.setAttribute('aria-label', 'Выключить голосовой режим');
     status.hidden = false;
@@ -201,7 +231,9 @@
     enabled = false;
     clearSilenceTimer();
     clearRestartTimer();
-    pendingText = '';
+    if (mode === 'command') showDraft();
+    voiceDraft = '';
+    baseText = '';
     mode = 'wake';
     starting = false;
     toggle.setAttribute('aria-pressed', 'false');
