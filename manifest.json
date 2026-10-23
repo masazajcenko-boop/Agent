@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Chrome Crawler — Agent Edition",
-  "version": "0.7.6",
+  "version": "0.7.7",
   "author": "ir00nman",
   "homepage_url": "https://github.com/masazajcenko-boop/Agent",
   "description": "Chrome Crawler — браузерный LLM-агент с отдельным плавающим окном.",
