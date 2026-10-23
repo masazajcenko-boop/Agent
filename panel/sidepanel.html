@@ -276,6 +276,12 @@
   .compose-row { display: flex; align-items: flex-end; gap: 6px; }
   .compose textarea { flex: 1; border: 0; outline: 0; background: transparent; resize: none; max-height: 110px; min-height: 36px; padding: 8px 6px 8px 8px; font-size: 13.5px; }
   .compose textarea::placeholder { color: var(--muted); }
+  .voice-toggle { width: 32px; height: 36px; flex: none; display: grid; place-items: center; border: 1px solid transparent; background: transparent; color: var(--muted); border-radius: var(--r-pill); cursor: pointer; padding: 0; }
+  .voice-toggle:hover { color: var(--txt); background: var(--card2); }
+  .voice-toggle[aria-pressed="true"] { color: #fff; background: #b42318; border-color: #f04438; }
+  .voice-toggle .ic { width: 18px; height: 18px; }
+  .voice-status { padding: 0 8px 2px; color: var(--muted); font-size: 11px; min-height: 14px; }
+  .voice-status[hidden] { display: none; }
   /* Вложения: кнопка 📎, миниатюры над полем, подсветка при перетаскивании */
   .attach { width: 32px; height: 36px; flex: none; display: grid; place-items: center; border: 0; background: transparent; color: var(--muted); border-radius: var(--r-pill); cursor: pointer; padding: 0; }
   .attach:hover { color: var(--txt); }
@@ -612,8 +618,10 @@
       <button class="attach" id="btnAttach" type="button" title="Прикрепить картинку или текстовый файл (можно вставить ⌘V или перетащить)" aria-label="Прикрепить файл"><svg class="ic"><use href="#i-clip"/></svg></button>
       <input type="file" id="attachInput" multiple accept="image/*,text/*,.md,.csv,.tsv,.json,.jsonl,.xml,.html,.css,.js,.mjs,.ts,.tsx,.jsx,.py,.rb,.go,.rs,.java,.kt,.c,.h,.cpp,.hpp,.cs,.php,.sh,.yml,.yaml,.toml,.ini,.cfg,.conf,.log,.sql,.srt,.vtt,.fs" hidden>
       <textarea id="task" rows="1" placeholder="Что сделать в текущей вкладке?"></textarea>
+      <button class="voice-toggle" id="voiceToggle" type="button" title="Голосовой режим Авроры" aria-label="Включить голосовой режим" aria-pressed="false"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5M8 22h8"/></svg></button>
       <button class="send" id="run" type="button" aria-label="Запустить"><svg class="ic"><use href="#i-up"/></svg></button>
     </div>
+    <div class="voice-status" id="voiceStatus" role="status" aria-live="polite" hidden>Голосовой режим выключен</div>
     <div class="opts">
       <div class="opt"><span class="opt-label" id="observeLabel">Видит</span>
         <div class="seg" id="observeSeg" role="group" aria-labelledby="observeLabel"><button type="button" data-v="structure" title="DOM и текст, без скриншотов">Структура</button><button type="button" data-v="image" title="Скриншот и координаты; нужна модель с vision">Изображение</button><button type="button" data-v="both" title="DOM и скриншот">Вместе</button></div>
@@ -772,5 +780,6 @@
 <script src="tour.js"></script>
 <script src="model-switch.js"></script>
 <script src="sidepanel.js"></script>
+<script src="voice.js"></script>
 </body>
 </html>
