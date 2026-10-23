@@ -107,7 +107,7 @@
     if (!transcript) return;
 
     if (mode === 'wake') {
-      if (!/\bаврора\b/i.test(normalize(transcript))) return;
+      if (!/(^|\s)аврора(\s|$)/i.test(normalize(transcript))) return;
       mode = 'command';
       baseText = task.value.trim();
       voiceDraft = '';
