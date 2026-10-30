@@ -6,6 +6,16 @@ LLM управляет текущей вкладкой: облачные API и 
 1. `chrome://extensions` → «Режим разработчика» → «Загрузить распакованное» (или ↻ у установленного).
 2. Иконка расширения открывает боковую панель. Шестерёнка → провайдер, ключ, модель.
 
+## v0.8.0 — Memory Crawler + mandatory Core Skills
+
+- Added local A-RAG bridge at `127.0.0.1:8765`: health check, semantic/lexical search endpoint integration, and persistent note writes.
+- Every browser task now loads the full local Core Skills pack before starting. Missing/invalid Core Skills block execution.
+- A-RAG availability is required before task start in this memory-crawler build.
+- Relevant A-RAG memories are loaded into the model context at task start and refreshed when navigation changes the hostname.
+- The existing `save_note` tool now writes to both the existing per-site Chrome notes and A-RAG, with the current page URL as the source.
+- Added `docs/A-RAG-MEMORY.md` with the runtime sequence, API contract, and memory policy.
+- Existing Site Skills, Skript Library, site notes, floating-window binding, and safety gates remain separate and preserved.
+
 ## Интерфейс (v0.4)
 Главный экран: статус с кольцом шагов, выбранная модель, лог и ввод задачи. Режим мышления (Быстро / Авто / Думать) выбирается над полем ввода. Шестерёнка сверху открывает настройки провайдера, модели, скриншотов и темы; заметки сайтов доступны внизу настроек.
 
