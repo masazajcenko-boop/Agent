@@ -2323,7 +2323,7 @@ async function runTask() {
   let memoryHost = host;
   let memoryRows = [];
   try {
-    memoryRows = await RagBridge.search(modelTask + '\nsite:' + host, 5);
+    memoryRows = await RagBridge.search(modelTask + ' ' + host, 5);
     if (memoryRows.length) log('info', 'A-RAG: найдено записей памяти — ' + memoryRows.length);
   } catch (e) {
     log('info', 'Поиск памяти A-RAG не удался: ' + clip(e.message, 140));
@@ -2481,7 +2481,7 @@ async function runTask() {
       if (currentHost && currentHost !== memoryHost) {
         memoryHost = currentHost;
         try {
-          memoryRows = await RagBridge.search(modelTask + '\nsite:' + currentHost, 5);
+          memoryRows = await RagBridge.search(modelTask + ' ' + currentHost, 5);
           refreshSys();
           if (memoryRows.length) log('info', 'A-RAG: загружена память для ' + currentHost + ' (' + memoryRows.length + ').');
         } catch (e) { log('info', 'Поиск памяти для нового сайта не удался: ' + clip(e.message, 120)); }
