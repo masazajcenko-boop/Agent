@@ -2210,8 +2210,8 @@ async function executeTool(name, args, st, s) {
         log('info', 'Заметка сохранена локально и в A-RAG: ' + host);
         return { text: 'Saved to local site notes and A-RAG long-term memory.' };
       } catch (e) {
-        log('err', 'Локальная заметка сохранена, но A-RAG не принял запись: ' + clip(e.message, 160));
-        return fail('Saved locally, but A-RAG memory write failed: ' + e.message);
+        log('info', 'Заметка сохранена локально; синхронизация с A-RAG не удалась: ' + clip(e.message, 160));
+        return { text: 'Saved to local site notes. A-RAG sync failed, so this note is not yet in long-term memory: ' + clip(e.message, 180) };
       }
     }
 
@@ -2273,11 +2273,14 @@ async function runTask() {
     log('err', 'Блокировка запуска: Core Skills не загружены. ' + e.message);
     return;
   }
-  // Memory crawler не запускает задачу без подключённого локального A-RAG.
-  try { await RagBridge.health(); }
-  catch (e) {
-    log('err', 'A-RAG недоступен. Запусти сервис на 127.0.0.1:8765. ' + e.message);
-    return;
+  // A-RAG — подключаемая долговременная память, а не блокирующая зависимость.
+  // Если сервис временно недоступен, обычные задачи и локальные заметки продолжают работать.
+  let ragAvailable = false;
+  try {
+    await RagBridge.health();
+    ragAvailable = true;
+  } catch (e) {
+    log('info', 'A-RAG недоступен: задача продолжится без долговременной памяти. ' + clip(e.message, 140));
   }
 
   // «Ещё»: в логе — «Ещё», модели — исходная задача и что уже показано
@@ -2322,11 +2325,14 @@ async function runTask() {
   const host = (() => { try { return new URL(tab.url).hostname; } catch (e) { return ''; } })();
   let memoryHost = host;
   let memoryRows = [];
-  try {
-    memoryRows = await RagBridge.search(modelTask + ' ' + host, 5);
-    if (memoryRows.length) log('info', 'A-RAG: найдено записей памяти — ' + memoryRows.length);
-  } catch (e) {
-    log('info', 'Поиск памяти A-RAG не удался: ' + clip(e.message, 140));
+  if (ragAvailable) {
+    try {
+      memoryRows = await RagBridge.search(modelTask + ' ' + host, 5);
+      if (memoryRows.length) log('info', 'A-RAG: найдено записей памяти — ' + memoryRows.length);
+    } catch (e) {
+      ragAvailable = false;
+      log('info', 'Поиск памяти A-RAG не удался; задача продолжится без неё: ' + clip(e.message, 140));
+    }
   }
   if (chatHost && chatHost !== host) {
     log('info', 'Сайт изменился: старый диалог не будет передан модели.');
@@ -2480,11 +2486,21 @@ async function runTask() {
       const currentHost = (() => { try { return new URL(currentUrl).hostname; } catch (e) { return ''; } })();
       if (currentHost && currentHost !== memoryHost) {
         memoryHost = currentHost;
-        try {
-          memoryRows = await RagBridge.search(modelTask + ' ' + currentHost, 5);
+        if (ragAvailable) {
+          try {
+            memoryRows = await RagBridge.search(modelTask + ' ' + currentHost, 5);
+            refreshSys();
+            if (memoryRows.length) log('info', 'A-RAG: загружена память для ' + currentHost + ' (' + memoryRows.length + ').');
+          } catch (e) {
+            ragAvailable = false;
+            memoryRows = [];
+            refreshSys();
+            log('info', 'Память A-RAG для нового сайта недоступна: ' + clip(e.message, 120));
+          }
+        } else {
+          memoryRows = [];
           refreshSys();
-          if (memoryRows.length) log('info', 'A-RAG: загружена память для ' + currentHost + ' (' + memoryRows.length + ').');
-        } catch (e) { log('info', 'Поиск памяти для нового сайта не удался: ' + clip(e.message, 120)); }
+        }
       }
       const activeSkills = (await matchingSkills(currentUrl)).map((skill) =>
         `- ${clip(skill.title, 80)} [${skill.path || '/'}]: ${clip(skill.text, 900)}`);
