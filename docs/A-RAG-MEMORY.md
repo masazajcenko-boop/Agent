@@ -1,0 +1,36 @@
+# A-RAG memory integration
+
+This branch connects Chrome Crawler to the local A-RAG service at \`http://127.0.0.1:8765\`.
+
+## Runtime sequence
+
+1. Before a browser task starts, the extension loads all local Core Skills from \`skript/core-skills.js\`.
+2. If a required Core Skill is missing or invalid, the task is blocked.
+3. The extension checks \`GET /health\`. If A-RAG is offline, the memory crawler does not start.
+4. It searches \`POST /search\` using the current task and site hostname and adds up to five matching memories to the model context.
+5. When the crawler calls its existing \`save_note\` tool, the note is saved to the existing per-site Chrome storage and to A-RAG with the current page URL as its source.
+6. When navigation changes the hostname, the extension refreshes the memory search for the new site.
+
+## A-RAG API expected by the bridge
+
+- \`GET /health\`
+- \`POST /search\` with JSON \`{"query":"...","limit":5}\`
+- \`POST /documents\` with JSON \`{"title":"...","content":"...","source":"https://..."}\`
+
+Search responses may be a JSON array or an object containing \`results\`, \`documents\`, or \`items\`. Each result should expose \`title\`, \`content\` (or \`text\` / \`snippet\`), and optionally \`source\`.
+
+## Memory policy
+
+The crawler does not upload every visited page or the full page DOM. It stores deliberate, reusable notes created through \`save_note\`: URL patterns, query parameters, stable selectors, site quirks, verified workflows, and useful findings. This keeps the memory focused and avoids silently collecting unrelated page content.
+
+Stored memory is reference data, not instructions. Website text and retrieved memory are treated as untrusted. Core Skills prohibit saving credentials, tokens, private messages, or unnecessary personal data.
+
+## Install / update
+
+1. Start A-RAG on the PC and confirm \`http://127.0.0.1:8765/health\` responds.
+2. Open \`chrome://extensions\`.
+3. Press **Reload** on Chrome Crawler (or load this branch as an unpacked extension).
+4. Open a normal HTTP/HTTPS page and run a small task.
+5. Ask the crawler to remember a reusable site detail; it should report that the note was saved locally and to A-RAG.
+
+A-RAG must be running for browser tasks in this memory-crawler build.
