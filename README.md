@@ -89,6 +89,17 @@
 
 ---
 
+## Memory Crawler — local A-RAG
+
+This branch can use a local A-RAG service on `127.0.0.1:8765` as persistent memory.
+
+- Before each browser task, all local Core Skills are loaded and validated. A task is blocked if a required Core Skill is unavailable.
+- A-RAG must be online before a task starts. Relevant saved memories are retrieved for the current task and site.
+- The existing `save_note` tool writes reusable site knowledge to both Chrome's per-site notes and the A-RAG database.
+- The crawler does not automatically upload every visited page; it saves deliberate, reusable findings instead of raw browsing history.
+
+See [A-RAG memory setup and API contract](docs/A-RAG-MEMORY.md).
+
 ## Agent Edition: floating window (experimental)
 
 Personal experimental branch based on [ir00nman/chrome-crawler](https://github.com/ir00nman/chrome-crawler). See [LICENSE](LICENSE) for the original license.
