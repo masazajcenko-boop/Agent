@@ -1,5 +1,11 @@
 # Changelog (на русском)
 
+## v0.8.1 — resilient memory connection
+
+- A-RAG is no longer a hard blocker for browser tasks when the local memory service is temporarily offline.
+- The crawler clearly reports when a task runs without retrieved long-term memory.
+- A failed A-RAG note write no longer disguises a successful local save as a total failure; the response distinguishes local storage from long-term memory sync.
+
 LLM управляет текущей вкладкой: облачные API и локальные модели (LM Studio, Ollama, llama.cpp, Jan, vLLM).
 
 ## Установка / обновление
