@@ -94,7 +94,7 @@
 This branch can use a local A-RAG service on `127.0.0.1:8765` as persistent memory.
 
 - Before each browser task, all local Core Skills are loaded and validated. A task is blocked if a required Core Skill is unavailable.
-- A-RAG must be online before a task starts. Relevant saved memories are retrieved for the current task and site.
+- When A-RAG is online, relevant saved memories are retrieved for the current task and site. If it is offline, browser tasks continue without long-term memory; local site notes remain available.
 - The existing `save_note` tool writes reusable site knowledge to both Chrome's per-site notes and the A-RAG database.
 - The crawler does not automatically upload every visited page; it saves deliberate, reusable findings instead of raw browsing history.
 
