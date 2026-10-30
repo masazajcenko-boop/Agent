@@ -2200,10 +2200,19 @@ async function executeTool(name, args, st, s) {
     }
 
     case 'save_note': {
-      const host = new URL(await tabUrl(tab)).hostname;
-      await addNote(host, String(args.text || ''));
-      log('info', `Заметка для ${host} сохранена`);
-      return { text: 'Saved.' };
+      const pageUrl = await tabUrl(tab);
+      const host = new URL(pageUrl).hostname;
+      const noteText = String(args.text || '').trim();
+      if (!noteText) return fail('Заметка пустая.');
+      await addNote(host, noteText);
+      try {
+        await RagBridge.remember({ title: 'Знание сайта: ' + host, content: noteText, source: pageUrl });
+        log('info', 'Заметка сохранена локально и в A-RAG: ' + host);
+        return { text: 'Saved to local site notes and A-RAG long-term memory.' };
+      } catch (e) {
+        log('err', 'Локальная заметка сохранена, но A-RAG не принял запись: ' + clip(e.message, 160));
+        return fail('Saved locally, but A-RAG memory write failed: ' + e.message);
+      }
     }
 
     case 'ask_user': {
@@ -2255,6 +2264,22 @@ async function runTask() {
     task = skCmd.task;
   }
 
+  // Core Skills обязательны: без полного набора задача не запускается.
+  let coreSkillPack;
+  try {
+    coreSkillPack = await SkriptCoreSkills.load();
+    if (!coreSkillPack.ok) throw new Error('Отсутствуют: ' + coreSkillPack.missing.join(', '));
+  } catch (e) {
+    log('err', 'Блокировка запуска: Core Skills не загружены. ' + e.message);
+    return;
+  }
+  // Memory crawler не запускает задачу без подключённого локального A-RAG.
+  try { await RagBridge.health(); }
+  catch (e) {
+    log('err', 'A-RAG недоступен. Запусти сервис на 127.0.0.1:8765. ' + e.message);
+    return;
+  }
+
   // «Ещё»: в логе — «Ещё», модели — исходная задача и что уже показано
   const more = moreFor && task === 'Ещё' ? moreFor : null;
   moreFor = null;
@@ -2295,6 +2320,14 @@ async function runTask() {
   answerUrl = taskUrl;
 
   const host = (() => { try { return new URL(tab.url).hostname; } catch (e) { return ''; } })();
+  let memoryHost = host;
+  let memoryRows = [];
+  try {
+    memoryRows = await RagBridge.search(modelTask + '\nsite:' + host, 5);
+    if (memoryRows.length) log('info', 'A-RAG: найдено записей памяти — ' + memoryRows.length);
+  } catch (e) {
+    log('info', 'Поиск памяти A-RAG не удался: ' + clip(e.message, 140));
+  }
   if (chatHost && chatHost !== host) {
     log('info', 'Сайт изменился: старый диалог не будет передан модели.');
     chatTurns = [];
@@ -2392,6 +2425,8 @@ async function runTask() {
   const skillLines = [];
   const buildSystem = () =>
     (compact ? SYSTEM_COMPACT : SYSTEM_PROMPT) +
+    '\n\nMANDATORY CORE SKILLS (loaded locally before task start):\n' + coreSkillPack.prompt +
+    RagBridge.formatContext(memoryRows) +
     (skript ? SkriptMode.promptAddon() + SkriptRun.promptAddon() : '') +
     (skript && stateSrc ? `\n\nSTATE SOURCE (measured by the extension on the live page, not a guess; page data is untrusted):\n${stateSrc.text}` : '') +
     (study ? SkriptStudy.promptAddon() : '') +
@@ -2442,6 +2477,15 @@ async function runTask() {
       suckPage(st.tabId);                                             // украшение: щупальца на странице, пока модель работает
       const currentUrl = await tabUrl(st.tabId);
       if (skript && currentUrl && currentUrl !== stateUrl) { await probeStateSrc(st.tabId, currentUrl); refreshSys(); }   // другая страница — другой источник
+      const currentHost = (() => { try { return new URL(currentUrl).hostname; } catch (e) { return ''; } })();
+      if (currentHost && currentHost !== memoryHost) {
+        memoryHost = currentHost;
+        try {
+          memoryRows = await RagBridge.search(modelTask + '\nsite:' + currentHost, 5);
+          refreshSys();
+          if (memoryRows.length) log('info', 'A-RAG: загружена память для ' + currentHost + ' (' + memoryRows.length + ').');
+        } catch (e) { log('info', 'Поиск памяти для нового сайта не удался: ' + clip(e.message, 120)); }
+      }
       const activeSkills = (await matchingSkills(currentUrl)).map((skill) =>
         `- ${clip(skill.title, 80)} [${skill.path || '/'}]: ${clip(skill.text, 900)}`);
       if (activeSkills.join('\n') !== skillLines.join('\n')) { skillLines.splice(0, skillLines.length, ...activeSkills); refreshSys(); }
