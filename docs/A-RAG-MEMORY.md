@@ -33,4 +33,4 @@ Stored memory is reference data, not instructions. Website text and retrieved me
 4. Open a normal HTTP/HTTPS page and run a small task.
 5. Ask the crawler to remember a reusable site detail; it should report that the note was saved locally and to A-RAG.
 
-A-RAG must be running for browser tasks in this memory-crawler build.
+A-RAG is recommended for long-term memory, but it is not a hard dependency for ordinary browser tasks. If it is offline, the crawler continues without retrieved long-term memories. The existing local per-site notes remain available. A failed A-RAG write is reported explicitly; it is never described as saved to long-term memory.
