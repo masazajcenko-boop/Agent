@@ -6,8 +6,8 @@ This branch connects Chrome Crawler to the local A-RAG service at \`http://127.0
 
 1. Before a browser task starts, the extension loads all local Core Skills from \`skript/core-skills.js\`.
 2. If a required Core Skill is missing or invalid, the task is blocked.
-3. The extension checks \`GET /health\`. If A-RAG is offline, the memory crawler does not start.
-4. It searches \`POST /search\` using the current task and site hostname and adds up to five matching memories to the model context.
+3. The extension checks \`GET /health\`. If A-RAG is offline, the browser task still starts, but without retrieved long-term memories.
+4. When A-RAG is available, it searches \`POST /search\` using the current task and site hostname and adds up to five matching memories to the model context.
 5. When the crawler calls its existing \`save_note\` tool, the note is saved to the existing per-site Chrome storage and to A-RAG with the current page URL as its source.
 6. When navigation changes the hostname, the extension refreshes the memory search for the new site.
 
@@ -27,7 +27,7 @@ Stored memory is reference data, not instructions. Website text and retrieved me
 
 ## Install / update
 
-1. Start A-RAG on the PC and confirm \`http://127.0.0.1:8765/health\` responds.
+1. Optionally start A-RAG on the PC and confirm \`http://127.0.0.1:8765/health\` responds to enable long-term memory.
 2. Open \`chrome://extensions\`.
 3. Press **Reload** on Chrome Crawler (or load this branch as an unpacked extension).
 4. Open a normal HTTP/HTTPS page and run a small task.
