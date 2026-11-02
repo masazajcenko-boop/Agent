@@ -110,3 +110,8 @@ Personal experimental branch based on [ir00nman/chrome-crawler](https://github.c
 - A popup can be moved, minimized, and placed on a second monitor. A Windows system-tray icon would require a separate desktop companion.
 
 Load this branch from `chrome://extensions` with Developer mode enabled. Open a regular `http(s)` site and use the shortcut. This is an experimental change and needs manual browser testing before merging.
+
+
+## A-RAG — local memory service
+
+The repository includes the local A-RAG service in [A-RAG/](A-RAG/). It provides SQLite-backed long-term memory for the browser agent. For installation, configuration, and safe updates, see [A-RAG/README.md](A-RAG/README.md) and [docs/A-RAG-MEMORY.md](docs/A-RAG-MEMORY.md).
