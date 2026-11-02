@@ -1,3 +1,11 @@
+## 0.9.0 — Three-scope A-RAG memory
+
+- Added global, site and task memory scopes over the existing SQLite database.
+- Added backward-compatible in-place metadata migration; legacy records remain available as global memory.
+- Added hostname/task-aware search and seven-day expiry for task-scoped records.
+- Extended the Chrome bridge and `save_note` tool with explicit memory scopes.
+- Added the updated A-RAG server package under `A-RAG-server/`.
+
 # Changelog (на русском)
 
 ## Repository setup — Windows launcher
