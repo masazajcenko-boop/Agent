@@ -1,5 +1,12 @@
 # Changelog (на русском)
 
+## Repository setup — Windows launcher
+
+- Added `START_AURORA.bat` for the Windows layout `E:\\Agent` + `E:\\A-RAG`.
+- Updated setup documentation to use the exact A-RAG folder capitalization `E:\\A-RAG`.
+- The launcher checks A-RAG health, starts its existing `start-rag.bat` when needed, and continues without long-term memory if A-RAG is unavailable. It does not touch the A-RAG database.
+
+
 ## v0.8.1 — resilient memory connection
 
 - A-RAG is no longer a hard blocker for browser tasks when the local memory service is temporarily offline.
