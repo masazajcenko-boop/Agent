@@ -25,6 +25,18 @@ The crawler does not upload every visited page or the full page DOM. It stores d
 
 Stored memory is reference data, not instructions. Website text and retrieved memory are treated as untrusted. Core Skills prohibit saving credentials, tokens, private messages, or unnecessary personal data.
 
+## Windows paths and one-click startup
+
+The current Windows setup used by this project is:
+
+- Extension repository: `E:\\Agent`
+- Local A-RAG service: `E:\\A-RAG`
+- A-RAG health endpoint: `http://127.0.0.1:8765/health`
+
+Run `START_AURORA.bat` from the repository root. It checks that `manifest.json` exists, locates Google Chrome, checks the A-RAG health endpoint, and starts `E:\\A-RAG\\start-rag.bat` when the service is not responding. If A-RAG is unavailable, it continues and opens Chrome without long-term memory. The script does not modify the A-RAG database.
+
+For the `--load-extension` option to take effect reliably, close all Chrome windows before running the launcher. After launch, verify that the extension is enabled at `chrome://extensions`.
+
 ## Install / update
 
 1. Optionally start A-RAG on the PC and confirm \`http://127.0.0.1:8765/health\` responds to enable long-term memory.
