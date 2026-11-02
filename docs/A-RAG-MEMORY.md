@@ -37,12 +37,17 @@ Run `START_AURORA.bat` from the repository root. It checks that `manifest.json` 
 
 For the `--load-extension` option to take effect reliably, close all Chrome windows before running the launcher. After launch, verify that the extension is enabled at `chrome://extensions`.
 
-## Install / update
+## Windows laptop startup
 
-1. Optionally start A-RAG on the PC and confirm \`http://127.0.0.1:8765/health\` responds to enable long-term memory.
-2. Open \`chrome://extensions\`.
-3. Press **Reload** on Chrome Crawler (or load this branch as an unpacked extension).
-4. Open a normal HTTP/HTTPS page and run a small task.
-5. Ask the crawler to remember a reusable site detail; it should report that the note was saved locally and to A-RAG.
+The expected laptop layout is:
+
+- Extension repository: `E:\Agent`
+- Local A-RAG service: `E:\A-RAG`
+- A-RAG health endpoint: `http://127.0.0.1:8765/health`
+- A-RAG launcher: `E:\A-RAG\start-rag.bat`
+
+Run the repository launcher `START_AURORA.bat`. It checks the extension folder and Chrome, checks whether A-RAG is responding, starts the A-RAG launcher when needed, and opens Chrome with the unpacked extension. If Chrome is already running, close all Chrome windows and run the BAT again so Chrome receives the `--load-extension` argument.
+
+For manual startup: run `E:\A-RAG\start-rag.bat`, confirm the health endpoint responds, open `chrome://extensions`, enable Developer mode, load `E:\Agent` as an unpacked extension (or press **Reload**), then open a normal HTTP/HTTPS page and run a small task. Ask the crawler to remember a reusable site detail to test memory saving.
 
 A-RAG is recommended for long-term memory, but it is not a hard dependency for ordinary browser tasks. If it is offline, the crawler continues without retrieved long-term memories. The existing local per-site notes remain available. A failed A-RAG write is reported explicitly; it is never described as saved to long-term memory.
