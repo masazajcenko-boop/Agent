@@ -1,0 +1,14 @@
+# Local memory and runtime state
+data/
+*.sqlite
+*.sqlite3
+*.db
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+config.bat
+.env
+.env.*
+!.env.example
+*.log
