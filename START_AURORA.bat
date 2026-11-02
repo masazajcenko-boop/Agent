@@ -4,7 +4,7 @@ chcp 65001 >nul
 title Aurora - запуск проекта
 
 set "PROJECT=E:\Agent"
-set "RAG=E:\A-RAG"
+set "RAG=E:\A-rag"
 set "RAG_URL=http://127.0.0.1:8765/health"
 set "CHROME="
 
