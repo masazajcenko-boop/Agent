@@ -44,11 +44,20 @@ Stored memory is reference data, not instructions. Website text and retrieved me
 
 ## Update procedure
 
+### Windows safe updater
+
 1. Stop the local A-RAG server.
-2. Update the repository code while preserving the local `data/` directory and private `config.bat`.
-3. Run `install-rag.bat` only if dependencies changed or the environment is new.
-4. Start A-RAG with `start-rag.bat` and verify `/health`.
-5. Reload Chrome Crawler from `chrome://extensions`.
+2. Run `update-rag.bat` from the `A-RAG/` folder.
+3. The updater downloads only its explicit program-file allowlist from `feature/agent-a-rag-integration` into a temporary staging directory, validates the downloads, backs up existing program files, and then applies the update.
+4. If dependencies changed or the environment is new, run `install-rag.bat`.
+5. Start A-RAG with `start-rag.bat` and verify `/health` with `test-rag.bat`.
+6. Reload Chrome Crawler from `chrome://extensions`.
+
+The updater never targets `data/`, SQLite files, `.venv/`, `config.bat`, or any file outside its allowlist. If a file copy fails, it attempts to restore the previous program files. It does not move or migrate the database. Keep the private `config.bat` pointed at the exact existing database path before starting the updated service.
+
+### Manual update
+
+If you update files manually, stop the server first and preserve the local `data/` directory, `.venv/`, and private `config.bat`.
 
 The `.gitignore` in `A-RAG/` excludes the database, virtual environment, local configuration, logs, and Python cache files.
 
