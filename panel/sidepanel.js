@@ -126,8 +126,9 @@ const TOOLS = [
   fn('vision', 'Control screenshots (works when the user chose the mixed observation mode): once = attach a screenshot next turn; on = every turn; off = only after failures; auto = first step, after failures and on pages with little text.', {
     mode: { type: 'string', enum: ['once', 'on', 'off', 'auto'] }
   }, ['mode']),
-  fn('save_note', 'Remember a short useful fact about the current site (URL parameter meanings, selectors, quirks) for future tasks.', {
-    text: { type: 'string' }
+  fn('save_note', 'Save a deliberate memory. scope=site for this domain, global for reusable knowledge across sites, task for temporary facts needed only during the current task (expires automatically).', {
+    text: { type: 'string' },
+    scope: { type: 'string', enum: ['site', 'global', 'task'], description: 'site by default; global for general reusable knowledge; task for temporary task context' }
   }, ['text']),
   fn('ask_user', 'Ask the user to do something manually (login, captcha) or answer a question, then continue.', {
     message: { type: 'string' }, needs_text_answer: { type: 'boolean' }
@@ -147,6 +148,8 @@ const clip = (s, n) => (s.length > n ? s.slice(0, n) + '…' : s);
 
 let running = false;
 let abortCtl = null;
+let activeMemoryTaskId = '';
+let activeMemoryHost = '';
 let cancelAsk = null;
 
 const DENIED = { text: 'User DENIED this action. Do not retry it; choose another approach or finish.', denied: true };
@@ -2201,17 +2204,29 @@ async function executeTool(name, args, st, s) {
 
     case 'save_note': {
       const pageUrl = await tabUrl(tab);
-      const host = new URL(pageUrl).hostname;
+      const host = (() => { try { return new URL(pageUrl).hostname; } catch (_) { return activeMemoryHost || ''; } })();
       const noteText = String(args.text || '').trim();
+      const scope = ['site', 'global', 'task'].includes(args.scope) ? args.scope : 'site';
       if (!noteText) return fail('Заметка пустая.');
-      await addNote(host, noteText);
+      if (scope === 'site' && host) await addNote(host, noteText);
       try {
-        await RagBridge.remember({ title: 'Знание сайта: ' + host, content: noteText, source: pageUrl });
-        log('info', 'Заметка сохранена локально и в A-RAG: ' + host);
-        return { text: 'Saved to local site notes and A-RAG long-term memory.' };
+        await RagBridge.remember({
+          title: scope === 'global' ? 'Общее знание' : scope === 'task' ? 'Контекст задачи' : 'Знание сайта: ' + host,
+          content: noteText,
+          source: pageUrl || 'chrome-crawler',
+          scope,
+          site: scope === 'site' ? host : '',
+          taskId: scope === 'task' ? activeMemoryTaskId : ''
+        });
+        log('info', scope === 'site' ? 'Заметка сохранена в памяти сайта: ' + host : scope === 'global' ? 'Заметка сохранена в общей памяти.' : 'Контекст сохранён в памяти текущей задачи.');
+        return { text: 'Saved to A-RAG memory (' + scope + ').' };
       } catch (e) {
-        log('info', 'Заметка сохранена локально; синхронизация с A-RAG не удалась: ' + clip(e.message, 160));
-        return { text: 'Saved to local site notes. A-RAG sync failed, so this note is not yet in long-term memory: ' + clip(e.message, 180) };
+        if (scope === 'site' && host) {
+          log('info', 'Заметка сохранена локально; синхронизация с A-RAG не удалась: ' + clip(e.message, 160));
+          return { text: 'Saved to local site notes. A-RAG sync failed: ' + clip(e.message, 180) };
+        }
+        log('info', 'Запись в A-RAG не удалась: ' + clip(e.message, 160));
+        return { text: 'A-RAG save failed: ' + clip(e.message, 180) };
       }
     }
 
@@ -2324,10 +2339,12 @@ async function runTask() {
 
   const host = (() => { try { return new URL(tab.url).hostname; } catch (e) { return ''; } })();
   let memoryHost = host;
+  activeMemoryHost = host;
+  activeMemoryTaskId = (globalThis.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('task-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10));
   let memoryRows = [];
   if (ragAvailable) {
     try {
-      memoryRows = await RagBridge.search(modelTask + ' ' + host, 5);
+      memoryRows = await RagBridge.search(modelTask, 5, { site: host, taskId: activeMemoryTaskId });
       if (memoryRows.length) log('info', 'A-RAG: найдено записей памяти — ' + memoryRows.length);
     } catch (e) {
       ragAvailable = false;
@@ -2488,7 +2505,8 @@ async function runTask() {
         memoryHost = currentHost;
         if (ragAvailable) {
           try {
-            memoryRows = await RagBridge.search(modelTask + ' ' + currentHost, 5);
+            activeMemoryHost = currentHost;
+            memoryRows = await RagBridge.search(modelTask, 5, { site: currentHost, taskId: activeMemoryTaskId });
             refreshSys();
             if (memoryRows.length) log('info', 'A-RAG: загружена память для ' + currentHost + ' (' + memoryRows.length + ').');
           } catch (e) {
