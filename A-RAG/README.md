@@ -25,6 +25,16 @@ Search body: `{"query":"site workflow","limit":5}`.
 
 The installer creates a local `.venv`, which is excluded from Git.
 
+### Safe code updates on Windows
+
+1. Stop the A-RAG server window.
+2. Run `update-rag.bat` from this folder.
+3. The updater downloads an explicit allowlist of program files into a temporary staging folder, validates the downloads, backs up the current versions, and then copies the updates.
+4. Run `install-rag.bat` only if dependencies changed or the environment is new.
+5. Run `start-rag.bat`, then `test-rag.bat`.
+
+The updater is pinned to the `feature/agent-a-rag-integration` branch. It does not copy or delete `data/`, SQLite databases, `.venv/`, `config.bat`, or any other unlisted file. If copying a program file fails, it attempts to restore the previous program files. Keep a separate backup of important data as usual.
+
 ## Configuration
 
 | Variable | Default | Purpose |
