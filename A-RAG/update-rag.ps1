@@ -70,8 +70,8 @@ try {
 
     try {
         foreach ($File in $AllowedFiles) {
-            Copy-Item -LiteralPath (Join-Path $StageDir $File) -Destination (Join-Path $TargetDir $File) -Force
             $Copied.Add($File)
+            Copy-Item -LiteralPath (Join-Path $StageDir $File) -Destination (Join-Path $TargetDir $File) -Force
         }
     }
     catch {
