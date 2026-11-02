@@ -100,7 +100,7 @@ This branch can use a local A-RAG service on `127.0.0.1:8765` as persistent memo
 - The existing `save_note` tool writes reusable site knowledge to both Chrome's per-site notes and the A-RAG database.
 - The crawler does not automatically upload every visited page; it saves deliberate, reusable findings instead of raw browsing history.
 
-See [A-RAG memory setup and API contract](docs/A-RAG-MEMORY.md).
+On the Windows laptop, the expected folders are `E:\Agent` (extension) and `E:\A-RAG` (memory service). Run [START_AURORA.bat](START_AURORA.bat) to start A-RAG when needed and launch Chrome with the unpacked extension. See [A-RAG memory setup and API contract](docs/A-RAG-MEMORY.md).
 
 ## Agent Edition: floating window (experimental)
 
