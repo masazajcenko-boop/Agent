@@ -1,0 +1,7 @@
+@echo off
+rem Copy to config.bat to customize. Defaults match Chrome Agent.
+set "A_RAG_HOST=127.0.0.1"
+set "A_RAG_PORT=8765"
+
+rem Optional: point to the existing database without moving it.
+rem set "A_RAG_DB_PATH=E:\A-rag\data\rag.sqlite3"
