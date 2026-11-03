@@ -1,0 +1,3 @@
+[submodule "desktop/agent-desktop"]
+	path = desktop/agent-desktop
+	url = https://github.com/masazajcenko-boop/agent-desktop.git
